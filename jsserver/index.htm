@@ -1,0 +1,212 @@
+<html><head>
+    <style>
+        * {
+            margin: 0px;
+            padding: 0px
+        }
+        .coder {
+            position: absoulte;
+            width: 50%;
+            height: 100%;
+            left: 0%;
+            right: 0%
+        }
+        .output {
+            position: absolute;
+            width: 50%;
+            height: 100%;
+            left: 50%;
+            top: 0%
+        }
+        .eqn {
+            position: absolute;
+            width: 50%;
+            height: 20%;
+            left: 50%;
+            top: 0%
+        }
+        .out {
+            position: absolute;
+            width: 50%;
+            height: 80%;
+            left: 50%;
+            top: 20%;
+            display: none
+        }
+    </style>
+    <link rel="shortcut icon" href="https://image.made-in-china.com/202f0j00WErUOyBFgzpG/Textile-Bleaching-Chemical-Sodium-Hydrosulfite-90-88-85-.jpg"/>
+    <title>Pb JS</title>
+    <meta charset="utf8"/>
+    <script src="https://rawgit.com/ajaxorg/ace-builds/master/src-noconflict/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.33.1/plotly.min.js"></script>
+    <script>
+    window.data = {};
+    window.onload = function(){
+        data.coder = ace.edit("coder");
+        data.coder.setTheme("ace/theme/textmate");
+        data.coder.getSession().setMode("ace/mode/latex");
+        data.out = ace.edit("out");
+        data.out.setTheme("ace/theme/textmate");
+        //data.out.getSession().setMode("ace/mode/latex");
+        data.pic = document.getElementById("eqn")
+        window.onkeydown = function(e){
+            if(e.key == "Enter" && e.ctrlKey){
+                data.go(e.shiftKey);
+            }
+        }
+    }
+    window.data.go = function(isG){
+        var code = data.coder.getSession().getValue();
+        var urls = '/js?' + encodeURIComponent(code);
+        var script = document.createElement('script');
+        script.src = urls;
+        document.head.appendChild(script);
+        data.out.getSession().setValue('Loading...');
+        out.style.display = 'block';
+        outg.style.display = 'none';
+        delete window._main;
+        script.onload = function(){
+            var res;
+            try{
+                res = window._main();
+            }catch(e){
+                data.out.getSession().setValue('Runtime error!');
+                var h = document.createElement('a');
+                h.href = urls;
+                h.target = '__blank';
+                h.click();
+                console.error(e);
+                return;
+            }
+            if(isG){
+                outg.style.display = 'block';
+                out.style.display = 'none';
+                data.gog(res);
+            }
+            data.out.getSession().setValue('' + res);
+            window.mr = res;
+        }
+        script.onerror = function(){
+            data.out.getSession().setValue('Compile error!');
+        }
+        var url = 'https://latex.codecogs.com/svg.latex?' + encodeURIComponent(code);
+        data.pic.src = url;
+    }
+    window.data.gog = function(res){
+        var x = [];
+        var y = [];
+        for(var i = res(1); i <= res(3); i += res(2)){
+            x.push(i);
+            var ys = res(0)(i);
+            var yy = [];
+            if(typeof(ys) == 'number'){
+                yy.push(ys);
+            } else {
+                for(var j = 0; ys(j) != null; j++){
+                    yy.push(ys(j));
+                }
+            }
+            for(var j = 0; j < yy.length; j++){
+                if(y[j] === undefined){
+                    y[j] = [];
+                }
+                y[j].push(yy[j]);
+            }
+        }
+        var data = [];
+        for(var i = 0; i < y.length; i++){
+            data.push({
+                x: x.slice(),
+                y: y[i],
+                type: 'scatter',
+                mode: 'lines'
+            });
+        }
+        Plotly.newPlot('outg', data);
+    }
+    </script>
+</head><body>
+    <div class="coder" id="coder">
+\binsearch(f, a, b, \varepsilon) = {
+    \begin{cases}
+        c_0 &= a \\
+        d_0 &= b \\
+        m_i &= (c_i + d_i) / 2 \\
+        g_i &= f(c_i) * f(m_i) \\
+        c_i &= \begin{cases}
+            c_{i-1},& g_{i-1} \leq 0 \\
+            m_{i-1},& else
+        \end{cases} \\
+        d_i &= \begin{cases}
+            m_{i-1},& g_{i-1} \leq 0 \\
+            d_{i-1},& else
+        \end{cases}
+    \end{cases};
+    s = \left\{ i \mid d_i - c_i < \varepsilon \right\};
+    i = s_0;
+    m_i
+};
+
+\log = \inject(\text{Math.log});
+E = \inject(\text{Math.E});
+\nil = \inject(\text{null});
+
+q(a, n) = {
+    \begin{cases}
+        r_1 = a \\
+        r_i = a^(r_{i-1})
+    \end{cases};
+    r_n
+};
+
+l(n, o, v) = {
+    t(a) = q(a, n);
+
+    \mn(f) = {
+        g(x) = f(x+10^{-3}) - f(x);
+        \binsearch(g, 0, 1, 10^{-6})
+    };
+    m = \mn(t) * o;
+    p = t(m) * o + 0.005 * (1 - o);
+
+    f(a) = {
+        g(x) = t(x) - a;
+        b = \begin{cases}
+            1, a < 1 \\
+            a
+        \end{cases};
+        r_1 = \binsearch(g, m, b, 10^{-6});
+        r_2 = \log(r_1) / \log(a);
+        r_3 = \log(r_2) / \log(a);
+        z = \left\{ r_1, r_2, -r_3 \right\};
+        r_2
+    };
+
+    \begin{cases}
+        f(v), v > p \\
+        1
+    \end{cases}
+};
+
+b(a) = {
+    v = a + 0;
+    \left\{
+        l(3, 0, v),
+        l(5, 0, v),
+        l(7, 0, v),
+        l(15, 0, v),
+        l(51, 0, v),
+        l(101, 0, v)
+    \right\}
+};
+
+h(a) = b(1/a);
+r_1 = \left\{ b, 0.005, 0.01, 3 \right\};
+r_2 = \left\{ h, 0.001, 0.01, 3 \right\};
+
+r_1
+    </div>
+    <img class="eqn" id="eqn"/>
+    <div class="out" id="out"></div>
+    <div class="out" id="outg"></div>
+</body></html>

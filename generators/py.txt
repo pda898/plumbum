@@ -1,0 +1,199 @@
+# > e.v == '`series' and e[0] == 'recN'
+# < \
+class _FrecN:
+    def __init__(_s):
+        _s.r={#% ','.join('(%s,):%s' % (
+            ','.join(r(ma) for ma in a[0]),
+            r(a[1])
+        ) for a in e[1]) #%}
+        class Pb(Exception):pass
+        _s.e=Pb
+    def __call__(_s,*_i):
+        while True:
+            if len(_i)-1==#% str(len(e[2])) #%:
+                _s.r[_i[:-1]]=_i[-1]
+                return _i[-1]
+            if _i in _s.r:return _s.r[_i]
+            #% "(%s,)" % ','.join(r(a) for a in e[2]) #%=_i
+            _r=0
+            try:_v=#% r(e[3]) #%
+            except RecursionError:_r=1
+            except _s.e:_r=1
+            except Exception as e:
+                if 'Pb' in e.__dict__:
+                    _i=e.vars
+                    continue
+                else:_r=e
+            if _r==1:raise _s.e('deep rec at ' + str(_i))
+            if _r!=0:raise _r
+            _s.r[_i]=_v
+            return _v
+    def __repr__(s):return "<Pb rec %s>" % repr(s.r)
+return _FrecN()
+# \
+
+# > e.v == '^'
+# < pow(#% r(e[0]) #%,#% r(e[1]) #%)
+
+# > e.v == '`series' and e[0] == 'genN'
+# < \
+class _FgenN:
+    def __init__(_s):
+        _s.p=[0,0]
+        _s.f=[0,0]
+        _s.r={}
+        _s.g=#% r(e[4]) if e[4] is not None else 'None' #%
+    def q(_s,_d):
+        if _s.p[_d]==None:return False
+        _g=_d*2-1
+        for _i in range(0,_g*10000,_g):
+            _v=_s.p[_d]+_i
+            if _s.g!=None:_v=_s.g(_v)
+            if _v==None:
+                _s.p[_d]=None
+                return False
+            #% r(e[2]) #%=_v
+            if #% r(e[3]) #%:
+                _s.p[_d]+=_i+_g
+                _s.f[_d]+=_g
+                _s.r[_s.f[_d]]=_v
+                return True
+        raise Exception('gen search exceed on ' + str(_s.p[_d]))
+    def __call__(_s,_i):
+        if _i==0:return _s(1)
+        if _i in _s.r:return _s.r[_i]
+        if _i<0:
+            while _s.f[0]>_i and _s.q(0):pass
+            if _s.p[0]==None:return None
+        else:
+            while _s.f[1]<_i and _s.q(1):pass
+            if _s.p[1]==None:return None
+        return _s.r[_i]
+    def __repr__(s):return "<Pb gen %s>" % repr(s.g)
+return _FgenN()
+# \
+
+# > e.v == '`series' and e[0] == 'arrN'
+# < \
+class _FarrN:
+    def __init__(_s):_s.a=[#% ','.join(r(a) for a in e[3]) #%]
+    def __call__(s,i):return None if i<0 or i>=len(s.a) else s.a[i]
+    def __repr__(s):return "<Pb %s>" % repr(s.a)
+    def __eq__(s,o):return type(s).__name__==type(o).__name__ and s.a==o.a
+return _FarrN()
+# \
+
+# > e.v == '`matrix'
+# < \
+class _Fmtx:
+    def __init__(_s):
+        _s.s=[#% str(e[0][0]) #%,#% str(e[0][1]) #%]
+        _s.m=[#% ','.join(r(a) for a in e[1:]) #%]
+    def __call__(s,a,b=None):
+        if b is None:
+            if s.s[0]==1:
+                b=a
+                a=0
+            elif s.s[1]==1:
+                b=0
+            else:
+                raise Exception('No-vectored matrix expected two args')
+        if a not in range(s.s[0]) or b not in range(s.s[1]):return None
+        return s.m[a+b*s.s[0]]
+    def __repr__(s):
+        return '<Pb matrix\n%s\n>' % ('\n'.join(
+            '\t'.join(str(e) for e in s.m[i*s.s[0]:(i+1)*s.s[0]])
+            for i in range(s.s[1])
+        ))
+return _Fmtx()
+# \
+
+# > e.v == '`series' and e[0] == 'mapN'
+# < \
+class _FmapN:
+    def __init__(_s):
+        _s.g=[#% ','.join([r(a) for a in e[4]]) #%]
+    def __call__(_s, *args):
+        #% ''.join(
+        """_v=_s.g[%d](*args)
+        if _v is None:return _v
+        %s=_v
+        """ % (i, r(e[2][i])) for i in range(len(e[2]))
+        )
+        #%return #% r(e[3]) #%
+    def __repr__(s):
+        return '<Pb map %s>' % repr(s.g)
+return _FmapN()
+# \
+
+# > e.v == '`args'
+# < \
+(lambda #%
+    ','.join('_a%d' % i for i in range(len(e)) if e[i] is None and i > 0)
+#%: #%
+    r(e[0])
+#%(#%
+    ','.join('_a%d' % i if e[i] is None else r(e[i]) for i in range(len(e)) if i > 0)
+#%))
+# \
+
+# > e.v == '`inject' and e[0].v == '`Pb'
+# < \
+# Not suported yet
+return None
+# \
+
+# > e.v == '`inject'
+# < \
+_v=#% e[0].v #%
+return _v
+# \
+
+# > e.v == '‖'
+# < abs(#% r(e[0]) #%)
+
+# > e.v == '∨'
+# < (#% r(e[0]) #% or #% r(e[1]) #%)
+
+# > e.v == '∧'
+# < (#% r(e[0]) #% and #% r(e[1]) #%)
+
+# > e.v == '`apply' and e[0].v == '⊧'
+# < (True if (#% r(e[1]) #%) else exec('raise AssertionError(\'#% r(e[1]) #%\')'))
+
+# > e.v == '≡'
+# < (#% r(e[0]) #%==#% r(e[1]) #%)
+
+# > e.v == '←'
+# < \
+exec('e=Exception()\ne.vars=vars\ne.Pb=True\nraise e',{'vars':(#%
+    ','.join(r(a) for a in e.args)
+#%,)})
+# \
+
+# > e.v == '`apply' and e[0].v == '⊗' and len(e.args) == 1
+# < None
+
+# > e.v == '≺'
+# < \
+__import__('consty').MACRO.get(#%
+    str(__import__('consty').MACRO.insert(
+        e[0] if len(e.args) == 1 else e
+    ))
+#%)
+# \
+
+# > e.v == '`apply' and e[0].v == '⊤' and len(e.args) == 1
+# < True
+
+# > e.v == '`apply' and e[0].v == '⊥' and len(e.args) == 1
+# < False
+
+# > e.v == '≻'
+# < \
+__import__('consty').MACRO.uncert(#%
+    str(__import__('consty').MACRO.insert(e))
+#%,(0,#%
+    ','.join(r(a) for a in e[1:])
+#%))
+# \

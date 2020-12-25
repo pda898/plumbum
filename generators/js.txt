@@ -1,0 +1,340 @@
+# > e.v == '`codywrap'
+# < function #% e[1] #%(){return #% r(e[0]) #%}
+
+# > \
+e.v == '`repl' and len(e[1]) == 0
+# \
+# < var #% r(e[0]) #%=#% r(e[2]) #%
+
+# > e.v == '`repl'
+# < \
+function #% r(e[0]) #%(#% ','.join(r(a) for a in e[1]) #%){#%
+    r(e[2])[len('(function(){'):-len('})()')]
+    if type(e).isFunc(e[2], ';') else
+    'return %s' % r(e[2])
+#%}
+# \
+
+# > e.v == ';'
+# < (function(){#% ';'.join([r(a) for a in e[:-1]] + ['return %s' % r(e[-1])]) #%})()
+
+# > e.v == '`cases'
+# < (#% ''.join('%s?%s:' % (r(a[1]), r(a[0])) for a in e[:-1]) #%#% r(e[-1]) #%)
+
+# > e.v == '`series' and e[0] == 'recN'
+# < \
+(function(){
+    var _s={};
+    _s.r=new Map([#% ','.join('[%s,%s]' % (r(a[0]), r(a[1])) for a in e[1]) #%]);
+    _s.c = function(_i,_v){
+        if(_v!==undefined){_s.r.set(_i,_v)}
+        if(_s.r.has(_i)){return _s.r.get(_i)}
+        #%
+        'return null;' if e[2] is None else
+        ("""var %s=_i;
+        var _v=%s;
+        _s.r.set(_i,_v);
+        return _v;""" % (r(e[2]), r(e[3])))
+        #%
+    }
+    _s.c.o=_s;
+    _s.c.toString=function(){
+        return `<Pb rec {${Array.from(_s.r.keys()).map(k => `${k}: ${_s.r.get(k)}`).join(', ')}}>`;
+    }
+    return _s.c;
+})()
+# \
+
+# > e.v == '`series' and e[0] == 'genN'
+# < \
+(function(){
+    var _s={};
+    _s.p=[0,0];
+    _s.f=[0,0];
+    _s.r=new Map();
+    _s.g=#% r(e[4]) if e[4] is not None else 'null' #%;
+    _s.q=function(_d){
+        if(_s.p[_d]==null)return false;
+        var _g=_d*2-1;
+        for(var _i=0;_i*_g<10000;_i+=_g){
+            var _v=_s.p[_d]+_i;
+            if(_s.g!=null) _v=_s.g(_v);
+            if(_v==null){
+                _s.p[_d]=null;
+                return false;
+            }
+            var #% r(e[2]) #%=_v;
+            if(#% r(e[3]) #%){
+                _s.p[_d]+=_i+_g;
+                _s.f[_d]+=_g;
+                _s.r.set(_s.f[_d],_v);
+                return true;
+            }
+        }
+        throw 'gen search exceed on ' + _s.p[_d];
+    }
+    _s.c=function(_i){
+        if(_i==0)return _s.c(1);
+        if(_s.r.has(_i))return _s.r.get(_i);
+        if(_i<0){
+            while(_s.f[0]>_i&&_s.q(0));
+            if(_s.p[0]==null)return null;
+        }else{
+            while(_s.f[1]<_i&&_s.q(1));
+            if(_s.p[1]==null)return null;
+        }
+        return _s.r.get(_i);
+    }
+    _s.c.o=_s;
+    _s.c.toString=function(){
+        return `<Pb gen ${_s.g}>`;
+    }
+    return _s.c;
+})();
+# \
+
+# > e.v == '`series' and e[0] == 'arrN'
+# < \
+(function(){
+    var _s={};
+    _s.a=[#% ','.join(r(a) for a in e[3]) #%];
+    _s.c=function(i){
+        return (i<0||i>=_s.a.length)?null:_s.a[i];
+    };
+    _s.c.o=_s;
+    _s.c.toString=function(){
+        return `<Pb [${_s.a.map(e => `${e}`).join(', ')}]>`;
+    }
+    return _s.c;
+})()
+# \
+
+# > e.v == '`series' and e[0] == 'mapN'
+# < \
+(function(){
+    var _s={};
+    _s.g=[#% ','.join([r(a) for a in e[4]]) #%];
+    _s.c=function(){
+        #% ''.join(
+        """var _v=_s.g[%d].apply(this, arguments);
+        if(_v==null){return _v}
+        var %s=_v;
+        """ % (i, r(e[2][i])) for i in range(len(e[2]))
+        )
+        #%return #% r(e[3]) #%;
+    }
+    _s.c.o = _s;
+    _s.c.toString=function(){
+        return `<Pb map [${_s.g}]>`;
+    }
+    return _s.c;
+})()
+# \
+
+# > e.v == '`matrix'
+# < \
+(function(){
+    var _s={};
+    _s.s=[#% str(e[0][0]) #%,#% str(e[0][1]) #%];
+    _s.m=[#% ','.join(r(a) for a in e[1:]) #%];
+    (function(){
+        var r=[];
+        for(var j=0;j<_s.s[1];j++){
+            r.push([]);
+            for(var i=0;i<_s.s[0];i++){
+                r[j].push(_s.m[i+j*_s.s[0]]);
+            }
+        }
+        _s.m=r;
+    })();
+    _s.c=function(a,b){
+        if(b===undefined){
+            if(_s.s[0]==1){b=a;a=0}
+            else if(_s.s[1]==1){b=0}
+            else{throw 'No-vectored matrix expected two args'}
+        }
+        if(a<0||a>=_s.s[0]||b<0||b>=_s.s[1]){return null}
+        return _s.m[b][a];
+    }
+    _s.c.o = _s;
+    _s.c.toString=function(){
+        r=[]
+        for(var i=0;i<_s.s[1];i++){
+            r.push(
+                _s.m[i]
+                .map(e=>''+e)
+                .join('\t')
+            )
+        }
+        return `<Pb matrix\n${r.join('\n')}\n>`
+    }
+    return _s.c;
+})()
+# \
+
+# > e.v == '^'
+# < Math.pow(#% r(e[0]) #%,#% r(e[1]) #%)
+
+# > e.v == '`pipely'
+# < (#% r(e[0]) #%)(#% ','.join(r(a) for a in e[1:]) #%)
+
+# > e.v == '`inject' and e[0].v == '`Pb'
+# < \
+(function(){
+    var glb = {};
+    var loc = {};
+    loc.asArray = function(arr){
+        if(arr.__proto__.constructor == Array){
+            return arr;
+        } else {
+            return Array.from(arr);
+        }
+    }
+    glb.fromArray = function(arr){
+        var pb = #% r(type(e).func('`series', ['arrN', [], [], []])) #%;
+        pb.o.a = loc.asArray(arr);
+        return pb;
+    }
+    glb.fromArray.toString = () => `<native array => series>`;
+    glb.toArray = function(ser){
+        var r = [];
+        var m = 10e9;
+        var i, v;
+        for(i=0; i<m; i++){
+            v = ser(i);
+            if(v == null){
+                return r;
+            }
+            r.push(v);
+        }
+        throw "Max array length is " + m;
+    }
+    glb.toArray.toString = () => `<series => native array>`;
+    glb.fromMatrix = function(arr){
+        var pb = #% r(type(e).func('`matrix', [[0,0]])) #%;
+        arr = loc.asArray(arr);
+        var rs = arr.length;
+        var cs = -1;
+        var m = [];
+        var fl = 0;
+        for(var row of arr){
+            var row2 = loc.asArray(row);
+            if(cs != -1 && row2.length != cs){
+                throw "No rect 2D array gived";
+            }
+            if(row2 == row){
+                fl++;
+            }
+            m.push(row2);
+            cs = row2.length;
+        }
+        if(cs == -1){
+            cs = 0;
+        }
+        if(fl == arr.length){
+            m = arr;
+        }
+        pb.o.s = [cs, rs];
+        pb.o.m = m;
+        return pb;
+    }
+    glb.fromMatrix.toString = () => `<native 2D array => matrix>`;
+    glb.toMatrix = function(ser){
+        var arr = glb.toArray(j => ser(0, j));
+
+        for(var j = 0; j < arr.length; j++){
+            arr[j] = [arr[j]].concat(glb.toArray(i => ser(i+1, j)));
+        }
+        return arr;
+    }
+    glb.toMatrix.toString = () => `<matrix => native 2D array>`;
+    glb.fromDict = function(d){
+        var pb = #%
+            r(type(e).func('`series', [
+                'recN',
+                [],
+                None
+            ]))
+        #%;
+        pb.o.r = {
+            set: function(k, v){
+                d[k] = v;
+            },
+            get: function(k){
+                return d[k];
+            },
+            has: function(k){
+                return d[k] !== undefined;
+            },
+            keys: function(){
+                var r = [];
+                for(var k in d){
+                    r.push(k);
+                }
+                return r;
+            }
+        };
+        return pb;
+    }
+    glb.fromDict.toString = () => `<native dict => series>`;
+    glb.toDict = function(pb){
+        if(pb.o.r.__proto__.constructor != Map){
+            return pb.o.r;
+        }
+        var r = {};
+        for(var k of pb.o.r.keys()){
+            r[k] = pb.o.r.get(k);
+        }
+        return r;
+    }
+    glb.toDict.toString = () => `<series recursion => native dict>`;
+    loc.getter = function(k){
+        var v = glb[k];
+        if(v === undefined){
+            return null;
+        } else {
+            return v;
+        }
+    }
+    loc.getter.toString = () => `<wrapper name => wrapper function>`;
+    glb.follow = function(obj){
+        return function(k){
+            if(k=="ready"){
+                return obj;
+            }
+            var res = loc.getter(k);
+            if(res==null){
+                return null;
+            }
+            res = res(obj);
+            if(res==null){
+                return null;
+            }
+            return function(){
+                var r = res.apply(this, arguments);
+                return glb.follow(r);
+            }
+        }
+    }
+    glb.follow.toString = () => `<follow wrapper>`;
+    return loc.getter;
+})()
+# \
+
+# > e.v == '`inject'
+# < (#% e[0].v #%)
+
+# > e.v == '‖'
+# < Math.abs(#% r(e[0]) #%)
+
+# > e.v == '∨'
+# < (#% r(e[0]) #%||#% r(e[1]) #%)
+
+# > e.v == '∧'
+# < (#% r(e[0]) #%&&#% r(e[1]) #%)
+
+# > e.v == '`apply' and e[0].v == '⊧'
+# < (function(){if(#% r(e[1]) #%)return 0;else throw '#% r(e[1]) #%'})()
+
+# > e.v == '≡'
+# < (#% r(e[0]) #%===#% r(e[1]) #%)

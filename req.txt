@@ -1,0 +1,14 @@
+certifi==2020.4.5.1
+chardet==3.0.4
+entrypoints==0.3
+flake8==3.7.9
+idna==2.9
+latex2mathml==2.13.0
+lxml==4.5.0
+mccabe==0.6.1
+mpmath==1.1.0
+pycodestyle==2.5.0
+pyflakes==2.1.1
+requests==2.23.0
+sympy==1.5.1
+urllib3==1.25.9
